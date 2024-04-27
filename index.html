@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | WebGL Test AR</title>
+    <script src="js/lib/aframe.min.js"></script>
+    <script src="js/lib/aframe-ar.js"></script>
+    <script src="Build/UnityLoader.js"></script>
+    <script src="js/app.js"></script>
+
+  </head>
+
+  <body style="margin: 0px; overflow: hidden;">
+      <a-scene embedded arjs vr-mode-ui="enabled: false" copycanvas>
+          <div id="unityContainer" style="z-index: 2"></div>
+          <!-- <a-marker preset="hiro"> <a-box></a-box> </a-marker> -->
+          <!-- <a-marker type="pattern" url="data/markers/pattern-arjs.patt"><a-box></a-box></a-marker> -->
+          <!-- <a-marker type="pattern" url="data/markers/test.patt" markercontroller="name : hiro"></a-marker> -->
+
+          <a-marker type="pattern" url="data/markers\Hiro.patt" markercontroller="name : Hiro"></a-marker>
+          <a-marker type="pattern" url="data/markers\Nutty.patt" markercontroller="name : Nutty"></a-marker>
+          <a-marker type="pattern" url="data/markers\NuttyCardboard.patt" markercontroller="name : NuttyCardboard"></a-marker>
+
+          <a-entity camera cameratransform></a-entity>
+      </a-scene>
+      <button onclick="captureScreenshot()">Capture Screenshot</button>
+
+      <script>
+          var unityInstance = UnityLoader.instantiate("unityContainer", "Build/YourGame.json", { onProgress: UnityProgress });
+
+          // Función para capturar la pantalla
+          function captureScreenshot() {
+              // Captura de la escena WebGL
+              var canvas = unityInstance.Module.canvas;
+              var webglDataUrl = canvas.toDataURL("image/png");
+
+              // Captura de la cámara del dispositivo
+              navigator.mediaDevices.getUserMedia({ video: true })
+                  .then(function (stream) {
+                      var video = document.createElement('video');
+                      document.body.appendChild(video);
+                      video.srcObject = stream;
+                      video.play();
+
+                      video.onloadedmetadata = function (e) {
+                          var tempCanvas = document.createElement('canvas');
+                          tempCanvas.width = video.videoWidth;
+                          tempCanvas.height = video.videoHeight;
+                          var ctx = tempCanvas.getContext('2d');
+                          ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+                          var cameraDataUrl = tempCanvas.toDataURL("image/png");
+
+                          // Combina ambas capturas
+                          var combinedCanvas = document.createElement('canvas');
+                          combinedCanvas.width = canvas.width;
+                          combinedCanvas.height = canvas.height + tempCanvas.height;
+                          var combinedCtx = combinedCanvas.getContext('2d');
+                          combinedCtx.drawImage(canvas, 0, 0);
+                          combinedCtx.drawImage(tempCanvas, 0, canvas.height);
+
+                          // Descarga la captura combinada
+                          var a = document.createElement("a");
+                          a.href = combinedCanvas.toDataURL("image/png");
+                          a.download = "screenshot.png";
+                          a.click();
+
+                          // Limpia los elementos temporales
+                          document.body.removeChild(video);
+                      };
+                  })
+                  .catch(function (err) {
+                      console.log('Error accessing camera:', err);
+                  });
+          }
+      </script>
+  </body>
+</html>
